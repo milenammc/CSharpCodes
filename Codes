@@ -1,0 +1,460 @@
+
+
+public double CalcularTempoPrazoDesde(string savePrazo, string data) {
+            DateTime prazo = DateTime.Parse(savePrazo);
+            DateTime dataEscolhida = DateTime.Parse(data);
+            TimeSpan diferenca = prazo - dataEscolhida;
+            var diasDeDiferenca = diferenca.TotalDays;
+            return diasDeDiferenca;
+}
+
+public string FazerConexaoLocalHost() {
+            parametrosBancoDeDados = "server=localhost;port=3306;User Id=root;database=historico_de_panes;password=";
+            return parametrosBancoDeDados;
+        }
+
+public string ConectarAoLocalHost() {
+            Config conexaoLocalHOST = new Config();
+            parametrosBancoDeDados = conexaoLocalHOST.FazerConexaoLocalHost();
+            return parametrosBancoDeDados;
+}
+        
+//CRUD (Create / Read / Update / Delete)
+        public void InserirPendenciaNoBancoDeDados(string data, string pendencia, string tiporesponsavel, string responsavel, string prazo, double diasDeDiferenca) {
+            try
+            {
+                //Conectar ao banco de dados
+                conexaoLocalHost = ConectarAoLocalHost();
+                MySqlConnection objetoconexao = new MySqlConnection(conexaoLocalHost);
+
+                //Comando: inserir no banco de dados
+                objetoconexao.Open();
+                MySqlCommand inserirPendencia = new MySqlCommand("insert into tb_pendencias (id,data,pendencias,tiporesponsavel, responsavel, prazo, status,tempo) values (null,?,?,?,?,?,?,?);", objetoconexao);
+                inserirPendencia.Parameters.Add("@data", MySqlDbType.VarChar, 1000).Value = data;
+                inserirPendencia.Parameters.Add("@pendencias", MySqlDbType.VarChar, 1000).Value = pendencia;
+                inserirPendencia.Parameters.Add("@tiporesponsavel", MySqlDbType.VarChar, 1000).Value = tiporesponsavel;
+                inserirPendencia.Parameters.Add("@responsavel", MySqlDbType.VarChar, 1000).Value = responsavel;
+                inserirPendencia.Parameters.Add("@prazo", MySqlDbType.VarChar, 1000).Value = prazo;
+                inserirPendencia.Parameters.Add("@status", MySqlDbType.VarChar, 1000).Value = "pendente";
+                inserirPendencia.Parameters.Add("@tempo", MySqlDbType.Int32).Value = diasDeDiferenca;
+                inserirPendencia.ExecuteNonQuery();
+                objetoconexao.Close();
+                MessageBox.Show("Pendência inserida com sucesso!");
+            }
+            catch (Exception erro)
+            { MessageBox.Show("Não conectou " + erro); }
+        }
+        public string[] BuscarPendenciaPorId(int id) {
+            try
+            {
+                //Conectar ao banco de dados
+                conexaoLocalHost = ConectarAoLocalHost();
+                MySqlConnection objetoconexao = new MySqlConnection(conexaoLocalHost);
+              
+                //Selecionar registro do Banco de Dados
+                objetoconexao.Open();
+                MySqlCommand selecionarDados = new MySqlCommand("select * from tb_pendencias where id = ?;", objetoconexao);
+                selecionarDados.Parameters.Clear();
+                selecionarDados.Parameters.Add("@id", MySqlDbType.Int32).Value = id;
+                MySqlDataReader dadosRetornados;
+                dadosRetornados = selecionarDados.ExecuteReader();
+
+                //Colocar dados da pendência em um array
+                string[] DadosPendencia = new string[5];
+                if (dadosRetornados.HasRows) {
+                    while (dadosRetornados.Read()) {
+                        DadosPendencia[0] = dadosRetornados.GetString(0); //Id
+                        DadosPendencia[1] = dadosRetornados.GetString(2); //Pendência
+                        DadosPendencia[2] = dadosRetornados.GetString(3); //Tipo de Responsável
+                        DadosPendencia[3] = dadosRetornados.GetString(4); //Responsável
+                        DadosPendencia[4] = dadosRetornados.GetString(5); //Prazo
+                    }
+                }
+                objetoconexao.Close();
+                return DadosPendencia;
+            }
+            catch (Exception erro)
+            { MessageBox.Show("Não conectou " + erro); string[] DadosPendencia = { }; return DadosPendencia; }
+        }
+        public void AtualizarPendenciaNoBancoDeDados(int id, string pendencias, string tiporesponsavel, string responsavel, string prazo) {
+            try
+            {
+                //Conectar ao banco de dados
+                conexaoLocalHost = ConectarAoLocalHost();
+                MySqlConnection objetoconexao = new MySqlConnection(conexaoLocalHost);
+
+                //Comando: atualizar no banco de dados
+                MySqlCommand updatePendencia = new MySqlCommand("update tb_pendencias set pendencias = ?, tiporesponsavel = ?, responsavel = ?, prazo = ? where id = ?;", objetoconexao);
+               
+                objetoconexao.Open();
+                updatePendencia.Parameters.Add("@pendencias", MySqlDbType.VarChar, 1000).Value = pendencias;
+                updatePendencia.Parameters.Add("@tiporesponsavel", MySqlDbType.VarChar, 1000).Value = tiporesponsavel;
+                updatePendencia.Parameters.Add("@responsavel", MySqlDbType.VarChar, 1000).Value = responsavel;
+                updatePendencia.Parameters.Add("@prazo", MySqlDbType.VarChar, 1000).Value = prazo;
+                updatePendencia.Parameters.Add("@id", MySqlDbType.Int32).Value = id;
+                updatePendencia.ExecuteNonQuery();
+                objetoconexao.Close();
+                MessageBox.Show("Alteração realizada com sucesso!");
+            }
+            catch (Exception erro)
+            { MessageBox.Show("Não conectou " + erro); }
+        }
+        public void DeletarPendenciaDoBancoDeDados(int id) {
+            try
+            {
+                //Conectar ao banco de dados
+                conexaoLocalHost = ConectarAoLocalHost();
+                MySqlConnection objetoconexao = new MySqlConnection(conexaoLocalHost);
+
+                //Comando: deletar pendência do banco de dados
+                objetoconexao.Open();
+                MySqlCommand comando = new MySqlCommand("delete from tb_pendencias where id = ?;", objetoconexao);
+                comando.Parameters.Clear();
+                comando.Parameters.Add("@id", MySqlDbType.Int32).Value = id;
+                comando.ExecuteNonQuery();
+                objetoconexao.Close();
+
+                MessageBox.Show("Pendência deletada com sucesso");
+            }
+            catch (Exception erro)
+            { MessageBox.Show("Não conectou " + erro); }
+        }
+        
+       
+    //COMBO BOX
+    public void ConfigurarAmbienteOcorrencias(ComboBox cmbTipo, ComboBox cmb1, ComboBox cmb2, TextBox txtComplementar, TextBox txtDescricao, Button cadastrarOcorrencia, Button atualizarOcorrencia, TextBox txtPreventivas, TextBox txtGEIV, TextBox txtGroundCheck, TextBox txtRegistros,Label label_ocorrencia) {
+            label_ocorrencia.Text = "Cadastrar nova ocorrência";
+            cmbTipo.Items.Clear();
+            cmbTipo.Items.Add("Pane");
+            cmbTipo.SelectedItem = "Pane";
+
+            cmb2.Visible = true;
+            txtComplementar.Clear();
+            txtComplementar.Visible = false;
+            txtDescricao.Clear();
+            txtDescricao.Visible = true;
+            cadastrarOcorrencia.Visible = true;
+            atualizarOcorrencia.Visible = false;
+
+            if (string.IsNullOrWhiteSpace(txtPreventivas.Text)) { }
+            else { string tipoPreventiva = "Preventiva"; cmbTipo.Items.Add(tipoPreventiva); }
+
+            if (string.IsNullOrWhiteSpace(txtGEIV.Text)) { }
+            else { string tipoVoosGEIV = "Voo do GEIV"; cmbTipo.Items.Add(tipoVoosGEIV); }
+
+            if (string.IsNullOrWhiteSpace(txtGroundCheck.Text)) { }
+            else { string tipoGroundCheck = "Ground Check"; cmbTipo.Items.Add(tipoGroundCheck); }
+
+            if (string.IsNullOrWhiteSpace(txtRegistros.Text)) { }
+            else { string tipoRegistro = "Registro"; cmbTipo.Items.Add(tipoRegistro); }
+        }
+        
+        //VALIDAÇÃO DE CAMPOS PREENCHIDOS
+        public void ValidarCamposPreenchidosOcorrencias(string data, CheckedListBox checkTecnicos, ComboBox cmbTipo, ComboBox cmb1, ComboBox cmb2, TextBox txtComplementar,TextBox txtDescricao,int IdPassadoPeloBotao, string action) {
+            //Verificar se já existe equipe cadastrada para aquele dia
+            string[] ocorrenciasEncontradas = BuscarOcorrenciaPorData(data);
+            int dados = int.Parse(ocorrenciasEncontradas[0]);
+            string equipeDefinida = "";
+            bool jaExisteEquipe = false;
+            string cadTecnicos = "";
+
+            //Se houver equipe definida...
+            if (dados != 0)
+            {
+                jaExisteEquipe = true;
+                string[] ocorrencia = ocorrenciasEncontradas[1].Split('&');
+                equipeDefinida = ocorrencia[1];
+            }
+
+            //Verificar se foram inseridos os técnicos
+            int numeroDeCheckBoxesSelecionados = checkTecnicos.CheckedItems.Count;
+            if (numeroDeCheckBoxesSelecionados == 0) { MessageBox.Show("Selecione os técnicos do dia antes de prosseguir"); return; }
+
+            //Percorrer técnicos selecionados
+            foreach (object itemChecked in checkTecnicos.CheckedItems)
+            { cadTecnicos += itemChecked.ToString() + ","; }
+            cadTecnicos = cadTecnicos.TrimEnd(',');
+
+            //Verificar se a equipe definida é a mesma que os técnicos selecionados
+            if (jaExisteEquipe == true)
+            {
+                if (cadTecnicos != equipeDefinida)
+                {
+                    MessageBox.Show("A equipe definida está diferente da cadastrada para a mesma data e não será considerada");
+                }
+                cadTecnicos = equipeDefinida;
+            }
+
+            //Definição dos outros valores
+            string cadTipo = cmbTipo.SelectedItem.ToString();
+            string cadCmb1 = cmb1.SelectedItem.ToString();
+            string cadCmb2 = "";
+
+            if (cmb2.SelectedItem == null) { }
+            else { cadCmb2 = cmb2.SelectedItem.ToString(); }
+
+            string cadTxtComplementar = txtComplementar.Text;
+            string cadTxtDescricao = txtDescricao.Text;
+
+            //Chamar métodos de inserção no banco
+            if(action == "alterar"){AlterarOcorrenciaNoBancoDeDados(cadTipo, cadCmb1, cadCmb2, cadTxtComplementar, cadTxtDescricao, IdPassadoPeloBotao);}
+            if(action == "cadastrar"){InserirOcorrenciaNoBancoDeDados(data, cadTecnicos, cadTipo, cadCmb1, cadCmb2, cadTxtComplementar, cadTxtDescricao);}
+        }
+    
+    public string TextBoxParaString(TextBox txtFonte) {
+
+            string[] arrayTextBox = txtFonte.Text.Split('\n');
+            StringBuilder stringComVirgulas = new StringBuilder("");
+
+            for (int i = 0; i < arrayTextBox.Length; i++)
+            {
+                string addTexto = arrayTextBox[i];
+                stringComVirgulas.AppendFormat(addTexto);
+                stringComVirgulas.Replace('\r', ',');
+            }
+            return stringComVirgulas.ToString().TrimEnd();
+        }
+        
+         public void CarregarCheckedListBoxTecnicos(CheckedListBox checkTecnicos, string data) {
+            //Desmarcar todos os técnicos selecionados
+            int totalDeTecnicos = checkTecnicos.Items.Count;
+            for (int t = 0; t < totalDeTecnicos; t++)
+            { checkTecnicos.SetItemChecked(t, false); }
+
+            try
+            {
+                //Conectar ao banco de dados
+                string conexaoLocalHost = ConectarAoLocalHost();
+                MySqlConnection objetoconexao = new MySqlConnection(conexaoLocalHost);
+
+                objetoconexao.Open();
+                MySqlCommand pegarTecnicos = new MySqlCommand("select equipe from tb_dados where data = ?;", objetoconexao);
+                pegarTecnicos.Parameters.Add("@data", MySqlDbType.VarChar, 1000).Value = data;
+                MySqlDataReader tecnicosDoDia;
+                tecnicosDoDia = pegarTecnicos.ExecuteReader();
+                tecnicosDoDia.Read();
+
+
+                if (tecnicosDoDia.HasRows)
+                { //Se tiver dados daquele dia...
+
+                    //Pega o nome dos técnicos registrados para aquele dia no banco e coloca em um array
+                    string tecnicoDoBanco = tecnicosDoDia.GetString(0);
+                    string[] ArrayTecnicosDoBanco = tecnicoDoBanco.Split(',');
+                    int numeroDeTecnicos = ArrayTecnicosDoBanco.Count();
+
+                    //Cria um array só com os índices dos técnicos que constam naquele dia
+                    int[] arrayIndexTecnicos = new int[numeroDeTecnicos];
+                    int x = 0;
+                    //Percorre o checkListBox Técnicos
+                    foreach (object item in checkTecnicos.Items)
+                    {
+                        string nomeDoTecnico = item.ToString(); //Pega o nome do técnico
+                                                                //Percorre os técnicos do banco de dados
+                        foreach (object nome in ArrayTecnicosDoBanco)
+                        {
+                            if (nomeDoTecnico == nome.ToString()) //Se o nome for igual ao do banco de dados, salva o índice no array
+                            { arrayIndexTecnicos[x] = checkTecnicos.Items.IndexOf(item); x++; }
+                        }
+                    }
+
+                    //Marcar checkbox do técnico correspondente
+                    foreach (object indice in arrayIndexTecnicos)
+                    {
+                        string ic = indice.ToString();
+                        int indiceDaCheckBox = int.Parse(ic);
+                        checkTecnicos.SetItemChecked(indiceDaCheckBox, true);
+                    }
+                }
+
+                else { return; }
+                objetoconexao.Close();
+            }
+            catch (Exception erro)
+            { MessageBox.Show("Não conectou " + erro); }
+        }
+        public void AlimentarComboBox(ComboBox cmbParaAlimentar, TextBox txtDeOrigem) {
+            cmbParaAlimentar.Items.Clear();
+            string[] ArrayDados = txtDeOrigem.Text.Split('\n');
+            foreach (var dado in ArrayDados) { cmbParaAlimentar.Items.Add(dado); }
+            cmbParaAlimentar.SelectedItem = ArrayDados[0];
+        }
+        public void AlimentarComboBoxComEquipamentos(ComboBox cmbParaAlimentar, TextBox txtOrigem1, TextBox txtOrigem2) {
+            cmbParaAlimentar.Items.Clear();
+            string[] Array1 = txtOrigem1.Text.Split('\n');
+            string[] Array2 = txtOrigem2.Text.Split('\n');
+            foreach (var dado1 in Array1) { cmbParaAlimentar.Items.Add(dado1); }
+            foreach (var dado2 in Array2) { cmbParaAlimentar.Items.Add(dado2); }
+            cmbParaAlimentar.Items.Add("Geral");
+            cmbParaAlimentar.SelectedItem = Array1[0];
+        }
+        public void InicializarCheckBoxes(TextBox[] textBoxes, CheckBox[] checkBoxes) {
+            for (int i = 0; i < textBoxes.Length; i++) {
+                if (string.IsNullOrWhiteSpace(textBoxes[i].Text)) //Se textBox estiver vazia
+                { checkBoxes[i].Checked = false; } //Desmarca CheckBox
+                else //Se tiver texto na textBox
+                { checkBoxes[i].Checked = true; } //Marca CheckBox
+                HabilitarTextBoxAoMarcarCheckBox(textBoxes[i], checkBoxes[i]);
+            }
+            
+        }
+        public void HabilitarTextBoxAoMarcarCheckBox(TextBox txtParaConfigurar, CheckBox checkBoxParaConfigurar) {
+            if (checkBoxParaConfigurar.Checked == true) 
+            { txtParaConfigurar.Enabled = true; } //Habilitar TextBox
+            else //Desabilitar TextBox
+            { txtParaConfigurar.Enabled = false; }
+        }
+        public void LimparTextBoxes(TextBox[] textBoxesParaLimpar) {
+            for(int i = 0; i < textBoxesParaLimpar.Length; i++)
+            {textBoxesParaLimpar[i].Text = "";}
+        }
+
+        //DATAGRIDVIEW
+        public void ZerarDataGridView(DataGridView datagrid) {
+            datagrid.Rows.Clear();
+            datagrid.Columns.Clear();
+        }
+        public void SelecionarLinhaDataGridView(DataGridView datagrid) {
+            foreach (DataGridViewCell celula in datagrid.SelectedCells) {
+                int numerodalinha = celula.RowIndex;
+                datagrid.Rows[numerodalinha].Selected = true;
+            }
+        }
+        public void DeletarLinhaSelecionadaDataGridView(DataGridView datagrid, DateTimePicker SeletorDeData) {
+
+            foreach (DataGridViewRow row in datagrid.SelectedRows) {
+                string LinhaParaExcluir = row.Cells[4].Value.ToString();
+                int idLinhaParaExcluir = int.Parse(LinhaParaExcluir);
+
+                if (datagrid.Name == "gradeOcorrencias") { classeOcorrencia.DeletarOcorrenciaDoBancoDeDados(idLinhaParaExcluir); }
+                if (datagrid.Name == "gradePendencias") { classePendencia.DeletarPendenciaDoBancoDeDados(idLinhaParaExcluir); }
+            }
+
+            ZerarDataGridView(datagrid);
+            classeOcorrencia.data = SeletorDeData.Value.ToString("d");
+            CarregarDadosDataGridView(datagrid, classeOcorrencia.data);
+        }
+        public string[] RecuperarDadosLinhaSelecionadaDataGridView(DataGridView datagrid) {
+
+            foreach (DataGridViewRow row in datagrid.SelectedRows) {
+                string LinhaParaAlterar = row.Cells[4].Value.ToString();
+                int idLinhaParaAlterar = int.Parse(LinhaParaAlterar);
+                if (datagrid.Name == "gradeOcorrencias") { string[] dadosRetornados = classeOcorrencia.BuscarOcorrenciaPorId(idLinhaParaAlterar); return dadosRetornados; }
+                if (datagrid.Name == "gradePendencias") { string[] dadosRetornados = classePendencia.BuscarPendenciaPorId(idLinhaParaAlterar); return dadosRetornados; }
+            }
+
+            string[] nada = { };
+            return nada;
+        }
+        public void CarregarDadosDataGridView(DataGridView datagrid, string data) {
+
+            datagrid.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells;
+
+            if (datagrid.Name == "gradeOcorrencias")
+            {
+                //Configurar colunas do DataGridView
+                datagrid.Columns.Add("Data", "Data"); //linhaDados [0]
+                datagrid.Columns.Add("Tipo", "Tipo"); //linhaDados [1]
+                datagrid.Columns.Add("Descrição", "Descrição"); //linhaDados [2]
+                datagrid.Columns.Add("Equipe", "Equipe"); //linhaDados [3]
+                datagrid.Columns[3].Visible = false;
+                datagrid.Columns.Add("Id", "Id"); //linhaDados [4]
+                datagrid.Columns[4].Visible = false;
+
+                AlimentarDataGridView(datagrid, data);
+            }
+
+            if (datagrid.Name == "gradePendencias") {
+                //Configurar colunas do DataGridView
+                datagrid.Columns.Add("Pendência", "Pendência"); //linhaDados[0]
+                datagrid.Columns.Add("Tipo", "Tipo"); //linhaDados[1]
+                datagrid.Columns.Add("Responsável", "Responsável"); //linhaDados[2]
+                datagrid.Columns.Add("Tempo", "Tempo"); //linhaDados[3]
+                datagrid.Columns.Add("Id", "Id"); //linhaDados[4]
+                datagrid.Columns[4].Visible = false;
+                datagrid.Columns.Add("Data", "Data"); //linhaDados[5]
+                datagrid.Columns[5].Visible = false;
+
+                AlimentarDataGridView(datagrid, data);
+            }
+        }
+        public void AlimentarDataGridView(DataGridView datagrid, string data) {
+            if (datagrid.Name == "gradeOcorrencias") {
+                try
+                {
+                    //Conectar ao banco de dados
+                    string conexaoLocalHost = ConectarAoLocalHost();
+                    MySqlConnection objetoconexao = new MySqlConnection(conexaoLocalHost);
+
+                    //Comando: buscar ocorrência
+                    MySqlCommand buscarOcorrencias = new MySqlCommand("SELECT * FROM tb_dados WHERE data = ?", objetoconexao);
+                    buscarOcorrencias.Parameters.Add("@data", MySqlDbType.VarChar, 1000).Value = data;
+
+                    //Criar array com total + todas as ocorrências encontradas {total,item,item,item...)
+                    objetoconexao.Open();
+                    MySqlDataReader ocorrenciasEncontradas = buscarOcorrencias.ExecuteReader();
+
+                    string[] linhaDados = new string [5];
+                    if (ocorrenciasEncontradas.HasRows)
+                    {
+                        while (ocorrenciasEncontradas.Read())
+                        { 
+                            linhaDados[0] = data;
+                            linhaDados[1] = ocorrenciasEncontradas.GetString(3) + " " + ocorrenciasEncontradas.GetString(4) + " " + ocorrenciasEncontradas.GetString(5) + " " + ocorrenciasEncontradas.GetString(6);
+                            linhaDados[2] = ocorrenciasEncontradas.GetString(7);
+                            linhaDados[3] = ocorrenciasEncontradas.GetString(2);
+                            linhaDados[4] = ocorrenciasEncontradas.GetString(0);
+                            datagrid.Rows.Add(linhaDados);
+                        }
+                    }
+
+                    objetoconexao.Close();
+                    
+                }
+                catch (Exception erro)
+                {MessageBox.Show("Não conectou " + erro);}
+            }
+
+            if (datagrid.Name == "gradePendencias") {
+                try
+                {
+                    //Conectar ao banco de dados
+                    string conexaoLocalHost = ConectarAoLocalHost();
+                    MySqlConnection objetoconexao = new MySqlConnection(conexaoLocalHost);
+
+                    //Selecionar registro do Banco de Dados
+                    objetoconexao.Open();
+                    MySqlCommand selecionarDados = new MySqlCommand("select * from tb_pendencias where status = ?;", objetoconexao);
+                    selecionarDados.Parameters.Clear();
+                    selecionarDados.Parameters.Add("@status", MySqlDbType.VarChar, 1000).Value = "pendente";
+                    MySqlDataReader dadosRetornados;
+                    dadosRetornados = selecionarDados.ExecuteReader();
+
+                    //Colocar dados da pendência em um array
+                    string[] DadosPendencia = new string[5];
+                    if (dadosRetornados.HasRows)
+                    {
+                        while (dadosRetornados.Read())
+                        {
+                            DadosPendencia[0] = dadosRetornados.GetString(0); //Id
+                            DadosPendencia[1] = dadosRetornados.GetString(2); //Pendência
+                            DadosPendencia[2] = dadosRetornados.GetString(3); //Tipo de Responsável
+                            DadosPendencia[3] = dadosRetornados.GetString(4); //Responsável
+                            DadosPendencia[4] = dadosRetornados.GetString(5); //Prazo
+                            string[] linhaDados = { DadosPendencia[1], DadosPendencia[2], DadosPendencia[3], DadosPendencia[4], DadosPendencia[0], data };
+                            datagrid.Rows.Add(linhaDados);
+                        }
+                    }
+                    objetoconexao.Close();
+                }
+                catch (Exception erro)
+                { MessageBox.Show("Não conectou " + erro); }
+            }
+
+
+        } //Falta implementar para ocorrências
+    }
+    
+    
+    
+    
