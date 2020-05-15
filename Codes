@@ -456,5 +456,53 @@ public string ConectarAoLocalHost() {
     }
     
     
-    
+     //TIPO DE DADO DAS COLUNAS (COLUMN_TYPE)
+                    //Formar string SQL para buscar os tipos de dado das colunas 
+                    StringBuilder stringSQLBuscaTipo = new StringBuilder("");
+                        stringSQLBuscaTipo.AppendFormat("SELECT column_type FROM information_schema.columns WHERE table_name =");
+                        stringSQLBuscaTipo.AppendFormat("'" + nome_da_tabela + "'");
+                        stringSQLBuscaTipo.AppendFormat(";");
+
+                    //COMANDO: pegar tipos de dados das colunas e gerar um array para tipos e um array para tamanhos
+                    objetoconexao.Open();
+                        MySqlCommand buscarTiposDeDados = new MySqlCommand(stringSQLBuscaTipo.ToString(), objetoconexao);
+                        MySqlDataReader tipos_colunas;
+                        tipos_colunas = buscarTiposDeDados.ExecuteReader();
+                        MySqlDbType tipo_do_dado = MySqlDbType.VarChar;
+                        int tamanho_do_dado = 0;
+                        ArrayList arrayListTipos = new ArrayList { };
+                        ArrayList arrayListTamanhos = new ArrayList { };
+
+                
+                        while (tipos_colunas.Read()){ //Para cada coluna...
+                            ArrayList arrayListTipoETamanho = FormatarTipoDeDadoETamanho(tipos_colunas.GetString(0));
+                            //Adicionar itens ao array dos tipos
+                            tipo_do_dado = (MySqlDbType)Convert.ChangeType(arrayListTipoETamanho[0], typeof(MySqlDbType));
+                            arrayListTipos.Add(tipo_do_dado);
+                            //Adicionar itens ao array dos tamanhos
+                            tamanho_do_dado = (int)Convert.ChangeType(arrayListTipoETamanho[1], typeof(int));
+                            arrayListTamanhos.Add(tamanho_do_dado);
+                        }
+                    objetoconexao.Close();
+                    
+                    public ArrayList FormatarTipoDeDadoETamanho(string column_type) {
+            
+            //Formato original: int(11) -> Objetivo: MySqlDbType.Int32 e 11
+            string milena =  column_type.Substring(0, column_type.Length);
+            string semUltimoParenteses = column_type.TrimEnd(')');
+            string[] dadosSeparados = semUltimoParenteses.Split('(');
+            
+            //Obter tipo separadamente
+            MySqlDbType tipoDoDado = MySqlDbType.VarChar;
+            if (dadosSeparados[0] == "int") { tipoDoDado = MySqlDbType.Int32; }
+            if (dadosSeparados[0] == "varchar") { tipoDoDado = MySqlDbType.VarChar; }
+            if (dadosSeparados[0] == "date") { tipoDoDado = MySqlDbType.Date; }
+
+            //Obter tamanho separadamente
+            int tamanhoDoDado = int.Parse(dadosSeparados[1]);
+
+            //Retornar array com tipo e tamanho separados
+            var tipoETamanho = new ArrayList { tipoDoDado, tamanhoDoDado };
+            return tipoETamanho;
+        }
     
